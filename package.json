@@ -1,0 +1,38 @@
+{
+    "name": "top-down-survival-shooter",
+    "version": "2.0.0",
+    "description": "A top-down survival shooter game built with Phaser.js",
+    "main": "src/game.js",
+    "scripts": {
+        "start": "npx serve . -p 8000",
+        "dev": "npx live-server --port=8000 --open=/src/",
+        "build": "rm -rf dist && mkdir -p dist && cp -r src/* dist/ && cp -r assets dist/",
+        "serve:dist": "npx serve dist -p 8001",
+        "test": "vitest",
+        "test:ui": "vitest --ui",
+        "test:run": "vitest run"
+    },
+    "keywords": [
+        "game",
+        "phaser",
+        "phaser3",
+        "shooter",
+        "survival",
+        "html5"
+    ],
+    "author": "Alex Wang",
+    "license": "MIT",
+    "dependencies": {
+        "phaser": "^3.80.1"
+    },
+    "devDependencies": {
+        "serve": "^14.2.1",
+        "live-server": "^1.2.2",
+        "vitest": "^1.0.0",
+        "@vitest/ui": "^1.0.0",
+        "jsdom": "^23.0.0"
+    },
+    "engines": {
+        "node": ">=14.0.0"
+    }
+}
