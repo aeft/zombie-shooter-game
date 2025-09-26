@@ -2,6 +2,9 @@
 
 A zombie survival shooter game built with Phaser.js. Control a character in a top-down view, fight waves of zombies, collect coins, and upgrade your weapons to survive as long as possible.
 
+## Demo
+![](./assets/demo.webp)
+
 ## Features
 
 - WASD movement and mouse aiming/shooting
