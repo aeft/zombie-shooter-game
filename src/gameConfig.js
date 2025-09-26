@@ -40,17 +40,10 @@ export const GAME_CONFIG = {
     MIN_COLLISION_DISTANCE: 40,
     ZOMBIE_OBSTACLE_DISTANCE: 30,
 
-    // Debug settings
-    DEBUG_HIT_DETECTION_BOXES: false,
-    DEBUG_PHYSICS_BOXES: true,
-
     // PHYSICS_BOXES: For player/zombie movement blocking (smaller for tighter movement)
     PHYSICS_BOXES: {
         // Player: small for precise visual contact detection
         player: { width: 32, height: 48 },
-
-        // Zombie: small for precise visual contact detection  
-        zombie: { width: 32, height: 48 },
 
         // Wall: smaller than visual for tighter movement
         wall: { width: 30, height: 30 },
@@ -66,7 +59,6 @@ export const GAME_CONFIG = {
     HIT_DETECTION_BOXES: {
         bullet: { width: 8, height: 8 },
         player: { width: 32, height: 48 },
-        zombie: { width: 32, height: 48 },
         tree: { width: 26, height: 48 },
         wall: { width: 32, height: 32 },
         explosive_barrel: { width: 28, height: 36 }
@@ -130,9 +122,13 @@ export const ZOMBIE_TYPES = {
         assetPath: '../assets/zombie.png',
         maxHealth: 2,
         speed: 50,
-        spawnWeight: 70, // 70% spawn chance
+        spawnWeight: 60, // 60% spawn chance
         healthBarColor: 0xFF0000, // Red
         healthBarWidthMultiplier: 1.0,
+        healthBarOffset: 35, // Distance above zombie for health bar
+        scale: 1.0, // Normal size
+        physicsBox: { width: 32, height: 48 }, // Collision box for movement
+        hitDetectionBox: { width: 32, height: 48 }, // Hit detection box for bullets
         description: 'Standard zombie - moderate speed, 2 health'
     },
     fast: {
@@ -144,6 +140,10 @@ export const ZOMBIE_TYPES = {
         spawnWeight: 20, // 20% spawn chance (reduced to make room for elite)
         healthBarColor: 0xFFA500, // Orange
         healthBarWidthMultiplier: 0.7,
+        healthBarOffset: 35, // Distance above zombie for health bar
+        scale: 1.0, // Normal size
+        physicsBox: { width: 32, height: 48 }, // Collision box for movement
+        hitDetectionBox: { width: 32, height: 48 }, // Hit detection box for bullets
         description: 'Fast zombie - high speed, 1 health'
     },
     elite_fast: {
@@ -155,24 +155,33 @@ export const ZOMBIE_TYPES = {
         spawnWeight: 10, // 10% spawn chance
         healthBarColor: 0xFF0000, // Red
         healthBarWidthMultiplier: 1.2,
+        healthBarOffset: 35, // Distance above zombie for health bar
         coinReward: 3, // 3 coins when killed
         hasRedGlow: true, // Special visual effect
-        minSpawnTime: 15000, // Only spawns after 15 seconds
-        guaranteedFirstSpawn: true, // Guaranteed to spawn at 15 second mark
+        minSpawnTime: 10000, // Only spawns after 15 seconds
+        scale: 1.0, // Normal size
+        physicsBox: { width: 32, height: 48 }, // Collision box for movement
+        hitDetectionBox: { width: 32, height: 48 }, // Hit detection box for bullets
         description: 'Elite zombie - tough, fast, valuable'
+    },
+    tank: {
+        id: 'tank',
+        spriteKey: 'tank',
+        assetPath: '../assets/tank.png',
+        maxHealth: 8,
+        speed: 30, // slow but extremely tough
+        spawnWeight: 10, // 10% spawn chance - rare but dangerous
+        healthBarColor: 0x8B0000, // Dark red
+        healthBarWidthMultiplier: 1.5, // Wider health bar for tank
+        healthBarOffset: 55, // Larger offset for bigger tank zombie
+        coinReward: 5, // High reward for tough enemy
+        minSpawnTime: 15000, // Only spawns after 30 seconds
+        scale: 2, // 2x larger than normal zombies
+        physicsBox: { width: 54, height: 50 }, // Moderately larger collision box for tank
+        hitDetectionBox: { width: 54, height: 50 }, // Moderately larger hit detection for tank
+        canDestroyObstacles: true, // Can destroy walls, trees, and barrels
+        description: 'Tank zombie - extremely slow but very tough, destroys obstacles'
     }
-    // Future zombie types can be added here:
-    // tank: {
-    //     id: 'tank',
-    //     spriteKey: 'zombie_tank',
-    //     assetPath: '../assets/zombie_tank.png', 
-    //     maxHealth: 5,
-    //     speed: 30,
-    //     spawnWeight: 10,
-    //     healthBarColor: 0x8B0000,
-    //     healthBarWidthMultiplier: 1.3,
-    //     description: 'Tank zombie - slow but very tough'
-    // }
 };
 
 // Weapon Types Configuration

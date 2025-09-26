@@ -10,7 +10,7 @@ export class GameOverScene extends Phaser.Scene {
         this.finalCoins = data.coins || 0;
         this.gameStats = data.gameStats || {
             totalCoins: 0,
-            zombieKills: { normal: 0, fast: 0, elite_fast: 0 },
+            zombieKills: { normal: 0, fast: 0, elite_fast: 0, tank: 0 },
             weaponsPurchased: [],
             survivalTime: 0
         };
@@ -19,10 +19,10 @@ export class GameOverScene extends Phaser.Scene {
     create() {
         const centerX = this.cameras.main.centerX;
         const centerY = this.cameras.main.centerY;
-        
+
         // Create full screen semi-transparent overlay
         this.add.rectangle(centerX, centerY, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.6);
-        
+
         // Create compact popup panel
         const panelWidth = 400;
         const panelHeight = 320;
@@ -39,7 +39,7 @@ export class GameOverScene extends Phaser.Scene {
             fontSize: '28px',
             color: '#000000'
         }).setOrigin(0.5);
-        
+
         const title = this.add.text(centerX, currentY, 'GAME OVER', {
             fontFamily: UI_CONFIG.gameOverText.font,
             fontSize: '28px',
@@ -60,7 +60,7 @@ export class GameOverScene extends Phaser.Scene {
             color: '#AAAAAA'
         }).setOrigin(0.5);
         currentY += 18;
-        
+
         this.add.text(centerX, currentY, `${minutes}:${seconds.toString().padStart(2, '0')}`, {
             fontFamily: UI_CONFIG.gameOverText.font,
             fontSize: '24px',
@@ -80,7 +80,7 @@ export class GameOverScene extends Phaser.Scene {
             color: '#AAAAAA'
         }).setOrigin(0.5);
         col1CurrentY += 16;
-        
+
         this.add.text(leftX, col1CurrentY, `${this.gameStats.totalCoins}`, {
             fontFamily: UI_CONFIG.gameOverText.font,
             fontSize: '20px',
@@ -96,7 +96,7 @@ export class GameOverScene extends Phaser.Scene {
             color: '#AAAAAA'
         }).setOrigin(0.5);
         col2CurrentY += 16;
-        
+
         this.add.text(rightX, col2CurrentY, `${totalKills}`, {
             fontFamily: UI_CONFIG.gameOverText.font,
             fontSize: '20px',
@@ -106,27 +106,34 @@ export class GameOverScene extends Phaser.Scene {
 
         // Zombie breakdown (vertical under KILLS column)
         let breakdownY = col2CurrentY;
-        
+
         this.add.text(rightX, breakdownY, `Normal: ${this.gameStats.zombieKills.normal}`, {
             fontFamily: UI_CONFIG.gameOverText.font,
             fontSize: '11px',
             color: '#CCCCCC'
         }).setOrigin(0.5);
         breakdownY += 14;
-        
+
         this.add.text(rightX, breakdownY, `Fast: ${this.gameStats.zombieKills.fast}`, {
             fontFamily: UI_CONFIG.gameOverText.font,
             fontSize: '11px',
             color: '#CCCCCC'
         }).setOrigin(0.5);
         breakdownY += 14;
-        
+
         this.add.text(rightX, breakdownY, `Elite Fast: ${this.gameStats.zombieKills.elite_fast}`, {
             fontFamily: UI_CONFIG.gameOverText.font,
             fontSize: '11px',
             color: '#CCCCCC'
         }).setOrigin(0.5);
-        
+        breakdownY += 14;
+
+        this.add.text(rightX, breakdownY, `Tank: ${this.gameStats.zombieKills.tank}`, {
+            fontFamily: UI_CONFIG.gameOverText.font,
+            fontSize: '11px',
+            color: '#CCCCCC'
+        }).setOrigin(0.5);
+
         currentY = Math.max(col1CurrentY, breakdownY + 20);
 
         // Weapons purchased (if any, more compact)

@@ -6,7 +6,7 @@ export class ZombieSystem {
         this.baseSpawnInterval = GAME_CONFIG.ZOMBIE_SPAWN_INTERVAL;
         this.currentSpawnMultiplier = 1.0;
         this.eliteZombieSpawned = false;
-        
+
         this.setupZombieSpawning();
     }
 
@@ -52,35 +52,36 @@ export class ZombieSystem {
 
         switch (edge) {
             case 0: // Top
-                spawnX = Phaser.Math.Between(playerX - screenWidth/2, playerX + screenWidth/2);
-                spawnY = playerY - screenHeight/2 - GAME_CONFIG.SPAWN_DISTANCE;
+                spawnX = Phaser.Math.Between(playerX - screenWidth / 2, playerX + screenWidth / 2);
+                spawnY = playerY - screenHeight / 2 - GAME_CONFIG.SPAWN_DISTANCE;
                 break;
             case 1: // Right
-                spawnX = playerX + screenWidth/2 + GAME_CONFIG.SPAWN_DISTANCE;
-                spawnY = Phaser.Math.Between(playerY - screenHeight/2, playerY + screenHeight/2);
+                spawnX = playerX + screenWidth / 2 + GAME_CONFIG.SPAWN_DISTANCE;
+                spawnY = Phaser.Math.Between(playerY - screenHeight / 2, playerY + screenHeight / 2);
                 break;
             case 2: // Bottom
-                spawnX = Phaser.Math.Between(playerX - screenWidth/2, playerX + screenWidth/2);
-                spawnY = playerY + screenHeight/2 + GAME_CONFIG.SPAWN_DISTANCE;
+                spawnX = Phaser.Math.Between(playerX - screenWidth / 2, playerX + screenWidth / 2);
+                spawnY = playerY + screenHeight / 2 + GAME_CONFIG.SPAWN_DISTANCE;
                 break;
             case 3: // Left
-                spawnX = playerX - screenWidth/2 - GAME_CONFIG.SPAWN_DISTANCE;
-                spawnY = Phaser.Math.Between(playerY - screenHeight/2, playerY + screenHeight/2);
+                spawnX = playerX - screenWidth / 2 - GAME_CONFIG.SPAWN_DISTANCE;
+                spawnY = Phaser.Math.Between(playerY - screenHeight / 2, playerY + screenHeight / 2);
                 break;
         }
 
         // Create zombie at calculated position
         const zombie = this.scene.zombies.create(spawnX, spawnY, zombieTypeConfig.spriteKey);
 
-        // Configure zombie physics
-        zombie.setSize(
-            GAME_CONFIG.PHYSICS_BOXES.zombie.width,
-            GAME_CONFIG.PHYSICS_BOXES.zombie.height
-        );
+        // Apply zombie scale from configuration
+        const zombieScale = zombieTypeConfig.scale * GAME_CONFIG.GLOBAL_SCALE;
+        zombie.setScale(zombieScale);
 
-        // Center the collision box on the sprite
-        const offsetX = (zombie.width * GAME_CONFIG.GLOBAL_SCALE - GAME_CONFIG.PHYSICS_BOXES.zombie.width) / 2;
-        const offsetY = (zombie.height * GAME_CONFIG.GLOBAL_SCALE - GAME_CONFIG.PHYSICS_BOXES.zombie.height) / 2;
+        // Configure zombie physics using zombie-specific collision box (no scaling)
+        zombie.setSize(zombieTypeConfig.physicsBox.width, zombieTypeConfig.physicsBox.height);
+
+        // Center the collision box - offset should be relative to the original sprite size
+        const offsetX = (zombie.width - zombieTypeConfig.physicsBox.width) / 2;
+        const offsetY = (zombie.height - zombieTypeConfig.physicsBox.height) / 2;
         zombie.body.setOffset(offsetX, offsetY);
 
         zombie.setCollideWorldBounds(true);
@@ -90,6 +91,7 @@ export class ZombieSystem {
         zombie.health = zombieTypeConfig.maxHealth;
         zombie.maxHealth = zombieTypeConfig.maxHealth;
         zombie.speed = zombieTypeConfig.speed;
+        zombie.canDestroyObstacles = zombieTypeConfig.canDestroyObstacles || false;
 
         // Create health bar
         this.createZombieHealthBar(zombie);
@@ -144,7 +146,7 @@ export class ZombieSystem {
         const screenHeight = this.scene.cameras.main.height;
         const playerX = this.scene.player.x;
         const playerY = this.scene.player.y;
-        
+
         // Define spawn areas around the player
         const spawnAreas = [
             // Top side (3-5 zombies)
@@ -152,17 +154,17 @@ export class ZombieSystem {
                 direction: 'top',
                 count: Phaser.Math.Between(3, 5),
                 getPosition: () => ({
-                    x: Phaser.Math.Between(playerX - screenWidth/2, playerX + screenWidth/2),
-                    y: playerY - screenHeight/2 - 50
+                    x: Phaser.Math.Between(playerX - screenWidth / 2, playerX + screenWidth / 2),
+                    y: playerY - screenHeight / 2 - 50
                 })
             },
             // Bottom side (3-5 zombies)
             {
-                direction: 'bottom', 
+                direction: 'bottom',
                 count: Phaser.Math.Between(3, 5),
                 getPosition: () => ({
-                    x: Phaser.Math.Between(playerX - screenWidth/2, playerX + screenWidth/2),
-                    y: playerY + screenHeight/2 + 50
+                    x: Phaser.Math.Between(playerX - screenWidth / 2, playerX + screenWidth / 2),
+                    y: playerY + screenHeight / 2 + 50
                 })
             },
             // Left side (3-5 zombies)
@@ -170,17 +172,17 @@ export class ZombieSystem {
                 direction: 'left',
                 count: Phaser.Math.Between(3, 5),
                 getPosition: () => ({
-                    x: playerX - screenWidth/2 - 50,
-                    y: Phaser.Math.Between(playerY - screenHeight/2, playerY + screenHeight/2)
+                    x: playerX - screenWidth / 2 - 50,
+                    y: Phaser.Math.Between(playerY - screenHeight / 2, playerY + screenHeight / 2)
                 })
             },
             // Right side (3-5 zombies)
             {
                 direction: 'right',
-                count: Phaser.Math.Between(3, 5), 
+                count: Phaser.Math.Between(3, 5),
                 getPosition: () => ({
-                    x: playerX + screenWidth/2 + 50,
-                    y: Phaser.Math.Between(playerY - screenHeight/2, playerY + screenHeight/2)
+                    x: playerX + screenWidth / 2 + 50,
+                    y: Phaser.Math.Between(playerY - screenHeight / 2, playerY + screenHeight / 2)
                 })
             }
         ];
@@ -189,29 +191,37 @@ export class ZombieSystem {
         spawnAreas.forEach(area => {
             for (let i = 0; i < area.count; i++) {
                 const pos = area.getPosition();
-                
+
                 // Only spawn normal and fast zombies initially (no elite)
                 const initialZombieTypes = ['normal', 'fast'];
                 const randomType = Phaser.Utils.Array.GetRandom(initialZombieTypes);
                 const zombieTypeConfig = ZOMBIE_TYPES[randomType];
-                
+
                 // Create zombie at calculated position
                 const zombie = this.scene.zombies.create(pos.x, pos.y, zombieTypeConfig.spriteKey);
-                
-                // Configure zombie properties
-                zombie.setSize(
-                    GAME_CONFIG.PHYSICS_BOXES.zombie.width,
-                    GAME_CONFIG.PHYSICS_BOXES.zombie.height
-                );
+
+                // Apply zombie scale from configuration
+                const zombieScale = zombieTypeConfig.scale * GAME_CONFIG.GLOBAL_SCALE;
+                zombie.setScale(zombieScale);
+
+                // Configure zombie physics using zombie-specific collision box (no scaling)
+                zombie.setSize(zombieTypeConfig.physicsBox.width, zombieTypeConfig.physicsBox.height);
+
+                // Center the collision box - offset should be relative to the original sprite size
+                const offsetX = (zombie.width - zombieTypeConfig.physicsBox.width) / 2;
+                const offsetY = (zombie.height - zombieTypeConfig.physicsBox.height) / 2;
+                zombie.body.setOffset(offsetX, offsetY);
+
                 zombie.zombieType = zombieTypeConfig.id;
                 zombie.zombieTypeConfig = zombieTypeConfig; // Store full config for health bar
                 zombie.health = zombieTypeConfig.maxHealth;
                 zombie.maxHealth = zombieTypeConfig.maxHealth;
                 zombie.speed = zombieTypeConfig.speed;
-                
+                zombie.canDestroyObstacles = zombieTypeConfig.canDestroyObstacles || false;
+
                 // Create health bar
                 this.createZombieHealthBar(zombie);
-                
+
                 console.log(`Initial ${zombieTypeConfig.description} spawned from ${area.direction}:`, {
                     position: pos,
                     type: zombieTypeConfig.id
@@ -256,37 +266,34 @@ export class ZombieSystem {
     updateSpawnSpeed() {
         const gameTime = this.scene.time.now - this.scene.gameStartTime;
         const gameTimeSeconds = gameTime / 1000;
-        
-        // Start increasing spawn speed after 1 minute (60 seconds)
-        if (gameTimeSeconds >= 60) {
-            // Calculate how many 30-second intervals have passed since 60 seconds
-            const intervalsElapsed = Math.floor((gameTimeSeconds - 60) / 30);
-            
-            // Calculate new spawn multiplier: 1.3^intervals, capped at 3.0x
-            const newMultiplier = Math.min(3.0, Math.pow(1.3, intervalsElapsed));
-            
-            // Only update if multiplier has changed significantly
-            if (Math.abs(newMultiplier - this.currentSpawnMultiplier) > 0.01) {
-                this.currentSpawnMultiplier = newMultiplier;
-                
-                // Update spawn timer with new interval
-                const newInterval = this.baseSpawnInterval / this.currentSpawnMultiplier;
-                
-                if (this.zombieSpawnTimer) {
-                    this.zombieSpawnTimer.destroy();
-                    this.zombieSpawnTimer = this.scene.time.addEvent({
-                        delay: newInterval,
-                        callback: this.spawnZombie,
-                        callbackScope: this,
-                        loop: true
-                    });
-                }
-                
-                console.log(`Spawn speed increased! Multiplier: ${this.currentSpawnMultiplier.toFixed(2)}x, Interval: ${newInterval}ms`);
-                
-                // Show notification
-                this.scene.showNotification('More zombies are approaching!');
+
+        // Calculate how many 30-second intervals have passed since 30 seconds
+        const intervalsElapsed = Math.floor(gameTimeSeconds / 30);
+
+        // Calculate new spawn multiplier: 1.3^intervals, capped at 3.0x
+        const newMultiplier = Math.min(3.0, Math.pow(1.3, intervalsElapsed));
+
+        // Only update if multiplier has changed significantly
+        if (Math.abs(newMultiplier - this.currentSpawnMultiplier) > 0.01) {
+            this.currentSpawnMultiplier = newMultiplier;
+
+            // Update spawn timer with new interval
+            const newInterval = this.baseSpawnInterval / this.currentSpawnMultiplier;
+
+            if (this.zombieSpawnTimer) {
+                this.zombieSpawnTimer.destroy();
+                this.zombieSpawnTimer = this.scene.time.addEvent({
+                    delay: newInterval,
+                    callback: this.spawnZombie,
+                    callbackScope: this,
+                    loop: true
+                });
             }
+
+            console.log(`Spawn speed increased! Multiplier: ${this.currentSpawnMultiplier.toFixed(2)}x, Interval: ${newInterval}ms`);
+
+            // Show notification
+            this.scene.showNotification('More zombies are approaching!');
         }
     }
 
@@ -296,9 +303,12 @@ export class ZombieSystem {
         const bgWidth = GAME_CONFIG.ZOMBIE_HEALTH_BAR_WIDTH * GAME_CONFIG.GLOBAL_SCALE * config.healthBarWidthMultiplier;
         const bgHeight = GAME_CONFIG.ZOMBIE_HEALTH_BAR_HEIGHT * GAME_CONFIG.GLOBAL_SCALE;
 
+        // Position health bar above zombie, using config offset (no scaling)
+        const healthBarOffset = config.healthBarOffset * GAME_CONFIG.GLOBAL_SCALE;
+
         zombie.healthBarBg = this.scene.add.rectangle(
             zombie.x,
-            zombie.y - 35 * GAME_CONFIG.GLOBAL_SCALE,
+            zombie.y - healthBarOffset,
             bgWidth,
             bgHeight,
             0x000000
@@ -306,7 +316,7 @@ export class ZombieSystem {
 
         zombie.healthBar = this.scene.add.rectangle(
             zombie.x,
-            zombie.y - 35 * GAME_CONFIG.GLOBAL_SCALE,
+            zombie.y - healthBarOffset,
             bgWidth,
             bgHeight,
             config.healthBarColor
@@ -321,12 +331,13 @@ export class ZombieSystem {
         if (zombie.healthBar && zombie.healthBarBg) {
             const config = zombie.zombieTypeConfig;
             const bgWidth = GAME_CONFIG.ZOMBIE_HEALTH_BAR_WIDTH * GAME_CONFIG.GLOBAL_SCALE * config.healthBarWidthMultiplier;
-            
-            // Update position
-            const barY = zombie.y - 35 * GAME_CONFIG.GLOBAL_SCALE;
+
+            // Update position, using config offset (no scaling)
+            const healthBarOffset = config.healthBarOffset * GAME_CONFIG.GLOBAL_SCALE;
+            const barY = zombie.y - healthBarOffset;
             zombie.healthBarBg.setPosition(zombie.x, barY);
             zombie.healthBar.setPosition(zombie.x, barY);
-            
+
             // Update health bar width based on current health
             const healthPercent = zombie.health / zombie.maxHealth;
             const healthWidth = bgWidth * healthPercent;
@@ -338,20 +349,20 @@ export class ZombieSystem {
         // Create multiple layered glow effects for more intensity
         const baseRadius = 35 * GAME_CONFIG.GLOBAL_SCALE;
         zombie.redGlowRings = [];
-        
+
         // Create 3 pulsing glow rings for layered effect
         for (let i = 0; i < 3; i++) {
             const glowRing = this.scene.add.circle(
-                zombie.x, 
-                zombie.y, 
-                baseRadius + (i * 8), // Varying sizes
-                0xFF0000, 
+                zombie.x,
+                zombie.y,
+                baseRadius + (i * 8), // Varying sizes, no scaling
+                0xFF0000,
                 0.15 + (i * 0.05)  // Varying opacity (0.15, 0.2, 0.25)
             );
-            
+
             // Set depth to appear behind zombie but above background
             glowRing.setDepth(-1);
-            
+
             // Create pulsing animation with different phases
             this.scene.tweens.add({
                 targets: glowRing,
@@ -363,7 +374,7 @@ export class ZombieSystem {
                 repeat: -1,
                 ease: 'Sine.easeInOut'
             });
-            
+
             zombie.redGlowRings.push(glowRing);
         }
     }
@@ -373,13 +384,13 @@ export class ZombieSystem {
         if (this.scene.cleanupBulletTrail) {
             this.scene.cleanupBulletTrail(bullet);
         }
-        
+
         // Remove bullet
         bullet.destroy();
 
         // Get weapon damage
         const damage = this.scene.currentWeapon.damage;
-        
+
         // Damage zombie
         zombie.health -= damage;
 
@@ -395,7 +406,7 @@ export class ZombieSystem {
             const coinReward = zombie.zombieTypeConfig.coinReward || 1;
             this.scene.coins += coinReward;
             this.scene.coinText.setText(`Coins: ${this.scene.coins}`);
-            
+
             // Update statistics
             this.scene.gameStats.totalCoins += coinReward;
             this.scene.gameStats.zombieKills[zombie.zombieTypeConfig.id]++;
@@ -429,7 +440,7 @@ export class ZombieSystem {
     destroyZombieEffects(zombie) {
         // Clean up health bar
         this.destroyZombieHealthBar(zombie);
-        
+
         // Clean up red glow effects for elite zombies
         if (zombie.redGlowRings) {
             zombie.redGlowRings.forEach(ring => ring.destroy());

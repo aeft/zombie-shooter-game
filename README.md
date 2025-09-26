@@ -58,6 +58,11 @@ npm run serve:dist
 - **C**: Open weapon shop
 - **Goal**: Survive waves of zombies and collect coins to buy better weapons
 
+## Debug
+
+- set `config.physics.arcade.debug` to `true` to see hit detection boxes
+
+
 ## License
 
 MIT

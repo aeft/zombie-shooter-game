@@ -35,7 +35,8 @@ export class GameScene extends Phaser.Scene {
             zombieKills: {
                 normal: 0,
                 fast: 0,
-                elite_fast: 0
+                elite_fast: 0,
+                tank: 0
             },
             weaponsPurchased: [], // List of weapons purchased this game
             survivalTime: 0, // Will be calculated at game over
@@ -307,6 +308,7 @@ export class GameScene extends Phaser.Scene {
         this.shopKey = this.input.keyboard.addKey(GAME_CONFIG.SHOP_TOGGLE_KEY);
         this.shopKey.on('down', this.toggleShop, this);
 
+
         // Mouse input for shooting
         this.input.on('pointerdown', this.shoot, this);
     }
@@ -423,9 +425,9 @@ export class GameScene extends Phaser.Scene {
         this.physics.add.overlap(this.player, this.zombies, this.playerHitZombie, null, this);
 
         // Zombie vs Environment (using smaller physics boxes for tighter movement)
-        this.physics.add.collider(this.zombies, this.environment);
-        this.physics.add.collider(this.zombies, this.trees);
-        this.physics.add.collider(this.zombies, this.barrels);
+        this.physics.add.collider(this.zombies, this.environment, this.zombieHitEnvironment, null, this);
+        this.physics.add.collider(this.zombies, this.trees, this.zombieHitTree, null, this);
+        this.physics.add.collider(this.zombies, this.barrels, this.zombieHitBarrel, null, this);
         this.physics.add.collider(this.zombies, this.boundaries);
 
         // Zombie vs Zombie (prevent overlapping)
@@ -1549,6 +1551,62 @@ export class GameScene extends Phaser.Scene {
         } else {
             // Hide hint if nothing can be purchased
             this.shopHint.setText('');
+        }
+    }
+
+    zombieHitEnvironment(zombie, wall) {
+        // Only tank zombies can destroy obstacles
+        if (zombie.canDestroyObstacles) {
+            // Create particle effect
+            this.createParticleEffect(wall.x, wall.y, 'stone');
+            
+            // Find and destroy the corresponding hit detection wall
+            this.environmentHitDetection.children.entries.forEach(hitWall => {
+                if (Math.abs(hitWall.x - wall.x) < 5 && Math.abs(hitWall.y - wall.y) < 5) {
+                    hitWall.destroy();
+                }
+            });
+            
+            // Destroy the wall
+            wall.destroy();
+        }
+    }
+
+    zombieHitTree(zombie, tree) {
+        // Only tank zombies can destroy obstacles
+        if (zombie.canDestroyObstacles) {
+            // Create particle effect
+            this.createParticleEffect(tree.x, tree.y, 'wood');
+            
+            // Find and destroy the corresponding hit detection tree
+            this.treesHitDetection.children.entries.forEach(hitTree => {
+                if (Math.abs(hitTree.x - tree.x) < 5 && Math.abs(hitTree.y - tree.y) < 5) {
+                    hitTree.destroy();
+                }
+            });
+            
+            // Destroy the tree
+            tree.destroy();
+        }
+    }
+
+    zombieHitBarrel(zombie, barrel) {
+        // Only tank zombies can destroy obstacles
+        if (zombie.canDestroyObstacles) {
+            // Create particle effect (metal sparks, not explosion)
+            this.createParticleEffect(barrel.x, barrel.y, 'metal');
+            
+            // Find and destroy the corresponding hit detection barrel
+            this.barrelsHitDetection.children.entries.forEach(hitBarrel => {
+                if (Math.abs(hitBarrel.x - barrel.x) < 5 && Math.abs(hitBarrel.y - barrel.y) < 5) {
+                    hitBarrel.destroy();
+                }
+            });
+            
+            // Destroy the barrel without explosion
+            barrel.destroy();
+            
+            console.log('Tank zombie destroyed barrel without explosion');
         }
     }
 
